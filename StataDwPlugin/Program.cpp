@@ -101,9 +101,10 @@ int createDataSet( vector<string> args ) {
 
 		// http://www.stata.com/support/faqs/data-management/using-plugin-to-connect-to-database/
 		// http://www.stata.com/support/faqs/data/connect_to_mysql.c
-		string stata_vars  = "";
-		string stata_types = "";
-		string stata_obs   = "";
+		string stata_vars    = "";
+		string stata_types   = "";
+		string stata_formats = "";
+		string stata_obs     = "";
 
 		// if there is anything left from a previous CREATE call, drop it
 		if( query != NULL ) {
@@ -115,20 +116,22 @@ int createDataSet( vector<string> args ) {
 
 		// display labels
 		for( vector<DwColumn*>::const_iterator ii = query->Columns().begin(); ii != query->Columns().end(); ii++ ) {
-			stata_vars  += (*ii)->VariableName() + " "; // TODO: spaces in labels will not work with the default mysql style macro
-			stata_types += (*ii)->StataDataType() + " ";
+			stata_vars    += (*ii)->VariableName() + " "; // TODO: spaces in labels will not work with the default mysql style macro
+			stata_types   += (*ii)->StataDataType() + " ";
+			stata_formats += (*ii)->StataFormat() + " ";
 		}
 
 		// count the rows, next time we shall run the query as well
 		stata_obs = toString(query->RowCount());
 
 		// Store variable names/types and observation number into Stata macro
-		SF_macro_save("_vars",  toStataString(stata_vars));
-		SF_macro_save("_types", toStataString(stata_types));
-		SF_macro_save("_obs",   toStataString(stata_obs));
+		SF_macro_save("_vars",    toStataString(stata_vars));
+		SF_macro_save("_types",   toStataString(stata_types));
+		SF_macro_save("_formats", toStataString(stata_formats));
+		SF_macro_save("_obs",     toStataString(stata_obs));
 
 		// print out for the users information
-		stataDisplay("Saved data size ("+stata_obs+" rows), column names and types ("+toString(query->Columns().size())+" cols) into marco variables called _obs, _vars and _types. \n");
+		stataDisplay("Saved data size ("+stata_obs+" rows), column names, types ("+toString(query->Columns().size())+" cols) and suggested formats into marco variables called _obs, _vars, _types and _formats. \n");
 	} 
 	// show errors
 	catch( DwUseException ex ) { // for some reason catching the base exception class doesn't work while in STATA :(

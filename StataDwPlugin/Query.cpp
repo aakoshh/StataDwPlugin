@@ -207,6 +207,37 @@ string DwColumn::StataDataType() {
 	return "str255"; // unknown
 }
 
+
+// the appropriate STATA format 
+// for now these are the same values as Stata assigns by default copied after using "describe"
+string DwColumn::StataFormat() {
+	if( this->valueTranslator != NULL ) {
+		return "%100s"; 
+	}
+	// http://www.stata.com/help.cgi?format
+	string type   = this->metaData.type;
+	int size      = this->metaData.size;
+	int precision = this->metaData.precision;
+	int scale     = this->metaData.scale;
+	// decide following the specification
+	if( type == "DATE" ) return "%td";
+	if( type == "TIMESTAMP" ) return "%tc";
+	if( type == "VARCHAR2" ) return "%" + toString(size) + "s";
+	if( type == "NUMBER" ) {
+		if( scale == 0 ) {
+			if( precision <= 2 ) return "%8.0g";
+			if( precision <= 4 ) return "%8.0g";
+			if( precision <= 9 ) return "%12.0g";
+			return "%10.0g";
+		} else {
+			if( precision <= 7 ) return "%9."+toString(scale)+"f";
+			return "%10."+toString(scale)+"f";
+		}
+	}
+	if( type == "INTEGER" ) return "%12.0g";
+	return "%255s"; // unknown
+}
+
 // STATA can store either double or string
 // I will use rs->getDouble for numeric and rs->getString for the rest
 bool DwColumn::IsNumeric() {

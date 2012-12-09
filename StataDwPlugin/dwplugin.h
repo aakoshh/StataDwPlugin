@@ -117,6 +117,8 @@ public :
 	string VariableName();
 	// the appropriate STATA datatype
 	string StataDataType();
+	// the format mask to show friendly values for dates
+	string StataFormat();
 	// STATA can store either double or string
 	// I will use rs->getDouble for numeric and rs->getString for the rest
 	bool IsNumeric();
