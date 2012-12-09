@@ -1,5 +1,5 @@
 // load with given path to given name
-program DW_use, plugin using("D:\Users\afarkas\mystuff\Arbeit\LearningCPlusPlus\DWH\DwUse\Debug\StataDwPlugin.dll")
+program DW_use, plugin using("D:\Users\afarkas\mystuff\Arbeit\MNB\STATA\Plugin\StataDwPlugin\Debug\StataDwPlugin.dll")
 
 // execute
 plugin call DW_use
@@ -14,17 +14,17 @@ program drop DW_use
 or
 
 // compile plugin from DLL and put it in the STATA directory
-cp "D:\Users\afarkas\mystuff\Arbeit\LearningCPlusPlus\DWH\DwUse\Debug\StataDwPluginTest.dll" dwuse.plugin
+cp "D:\Users\afarkas\mystuff\Arbeit\MNB\STATA\Plugin\StataDwPlugin\Debug\StataDwPluginTest.dll" dwuse.plugin
 
 program dwuse, plugin
 
 
 
 // examples of calling
-plugin call DW_use, DEFAULTS database xe username vef password ***
+plugin call DW_use, DEFAULTS database xe username vef password vef
 plugin call DW_use, CREATE tenytabla lowercase limit 10
 
-// plugin call DW_use, CREATE tenytabla label_variable label_values
+// plugin call DW_use, CREATE tenytabla lowercase limit 10 database xe username vef password vef
 
 set obs `obs'
 

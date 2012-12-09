@@ -29,3 +29,8 @@ StataDwPlugin/Debug/StataDwPlugin.lastbuildstate
 StataDwPlugin/Debug/StataDwPlugin_manifest.rc
 *.idb
 *.pdb
+_ReSharper.*
+*.opensdf
+*.sdf
+*.ipch
+Release/*
