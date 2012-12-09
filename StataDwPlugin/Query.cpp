@@ -139,6 +139,7 @@ DwColumn::DwColumn(	  DbColumnMetaData metaData,
 	string stype = this->StataDataType();
 	this->isNumeric = stype.substr(0,3) != "str"; // STATA only has string and double macro setters
 	this->isDate = this->metaData.type == "DATE"; // will be numeric in STATA but cannot get as double
+	this->isTime = this->metaData.type == "TIMESTAMP";
 }
 
 // free pointers
@@ -189,6 +190,7 @@ string DwColumn::StataDataType() {
 	int scale     = this->metaData.scale;
 	// decide following the specification
 	if( type == "DATE" ) return "double";
+	if( type == "TIMESTAMP" ) return "double";
 	if( type == "VARCHAR2" ) return "str" + toString(size);
 	if( type == "NUMBER" ) {
 		if( scale == 0 ) {
@@ -211,6 +213,10 @@ bool DwColumn::IsNumeric() {
 	return this->isNumeric;
 }
 
+bool DwColumn::IsNull(ResultSet* rs) {
+	return rs->isNull(this->position);
+}
+
 // retrieve the column value from a record as number
 double DwColumn::AsNumber(ResultSet* rs) {
 	if(this->isDate) {
@@ -221,8 +227,20 @@ double DwColumn::AsNumber(ResultSet* rs) {
 		// create the epoch by first making a copy of our date, because occi dates need environment
 		oracle::occi::Date base(date); 
 		base.setDate(1960,1,1);
-		oracle::occi::IntervalDS dt = date.daysBetween(base);
+		oracle::occi::IntervalDS dt = date.daysBetween(base); 
 		return dt.getDay();
+	} else if( this->isTime ) {
+		oracle::occi::Timestamp ts = rs->getTimestamp(this->position);
+		// STATA wants milliseconds since the above data
+		oracle::occi::Timestamp base(ts);
+		base.setDate(1960,1,1);
+		base.setTime(0,0,0,0);
+		oracle::occi::IntervalDS dt = ts.subDS(base);
+		double seconds = ((double)dt.getDay()) * 24 * 60 * 60 +
+						 ((double)dt.getHour()) * 60 * 60 + 
+						 ((double)dt.getMinute()) * 60 + 
+						 ((double)dt.getSecond());
+		return seconds * 1000;
 	}
 	return rs->getDouble(this->position);
 }
@@ -273,8 +291,9 @@ DwUseQuery::DwUseQuery(DwUseOptions* options) {
 	try {
 		colMeta = this->conn->Describe(probeSql);
 	} catch( SQLException ex ) {
+		string msg = ex.getMessage();
 		throw DwUseException( "Error reading column definitions with \n" 
-								+ probeSql +": \n" + ex.getMessage() ); 
+								+ probeSql +": \n" + msg ); 
 	}
 	// we'll need to know what to translate
 	set<string> transVars = this->options->LabelVariables();
@@ -371,8 +390,9 @@ int DwUseQuery::RowCount() {
 		this->conn->Select( rc, sql, params );
 		return cnt;
 	} catch( SQLException ex ) {
+		string msg = ex.getMessage();
 		throw DwUseException( "Error querying row count with \n" 
-								+ sql+ ": \n" + ex.getMessage() ); 
+								+ sql+ ": \n" + msg ); 
 	}
 }
 

@@ -120,6 +120,8 @@ public :
 	// STATA can store either double or string
 	// I will use rs->getDouble for numeric and rs->getString for the rest
 	bool IsNumeric();
+	// if there is no data we must not give STATA anything
+	bool IsNull(ResultSet* rs);
 	// retrieve the column value from a record as number
 	double AsNumber(ResultSet* rs);
 	// retrieve the column value from a record as a (translated) string
@@ -136,6 +138,7 @@ private :
 	// speed up type checking
 	bool isNumeric; 
 	bool isDate;
+	bool isTime;
 };
 
 

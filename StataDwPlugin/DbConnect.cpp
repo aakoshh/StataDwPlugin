@@ -36,6 +36,7 @@ string printType (int type) {
 		case OCCI_SQLT_LNG : return "LONG"; break;
 		case OCCI_SQLT_VCS : return "VARCHAR"; break;
 		case OCCI_SQLT_RID : return "ROWID"; break;
+		case OCCI_SQLT_TIMESTAMP : return "TIMESTAMP"; break;
 		case OCCI_SQLT_DAT : return "DATE"; break;
 		case OCCI_SQLT_VBI : return "VARRAW"; break;
 		case OCCI_SQLT_BIN : return "RAW"; break;

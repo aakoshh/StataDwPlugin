@@ -49,8 +49,10 @@ void stataDisplay( string msg ) {
 
 // store common options (username, database) in a pointer
 int setDefaultOptions( vector<string> args ) {	
-	if( defaultOptions != NULL )
+	if( defaultOptions != NULL ) {
 		delete defaultOptions; // previous
+		defaultOptions = NULL;
+	}
 	try {
 		// parse the new options and store them for future use
 		DwUseOptionParser* parser = new DwUseOptionParser();			
@@ -59,7 +61,8 @@ int setDefaultOptions( vector<string> args ) {
 	}
 	// show errors
 	catch( exception ex ) {
-		stataDisplay( "Error: "+string(ex.what())+"\n" );
+		string msg = string(ex.what());
+		stataDisplay( "Error: "+msg+"\n" );
 	}
 	// don't lett it bubble up to STATA because it crashes
 	catch( ... ) {
@@ -91,7 +94,7 @@ int createDataSet( vector<string> args ) {
 		if(options->Database() == "" || options->Username() == "" || options->Password() == "") {
 			throw DwUseException( "Database credentials are missing!" ); 
 		}
-		if(options->Table().find(" ") != string::npos) {
+		if(options->Table().find(" ") != string::npos || options->Table() == "") {
 			throw DwUseException( "Could not parse the table name (found \"" + options->Table() 
 									+ "\"). Are you missing a using keyword or mis-typed the one after the table name?" ); 
 		}
@@ -103,8 +106,10 @@ int createDataSet( vector<string> args ) {
 		string stata_obs   = "";
 
 		// if there is anything left from a previous CREATE call, drop it
-		if( query != NULL ) 
+		if( query != NULL ) {
 			delete query;
+			query = NULL;
+		}
 		// if there is anything wrong the query will raise exceptions
 		query = new DwUseQuery(options); // will free options on its own
 
@@ -127,7 +132,8 @@ int createDataSet( vector<string> args ) {
 	} 
 	// show errors
 	catch( DwUseException ex ) { // for some reason catching the base exception class doesn't work while in STATA :(
-		stataDisplay( "Error: "+string(ex.what())+"\n" );
+		string msg = ex.what();
+		stataDisplay( "Error: "+string(msg)+"\n" );
 	}
 	// don't lett it bubble up to STATA because it crashes
 	catch( ... ) {
@@ -149,16 +155,18 @@ public:
     { 
 		row++; // from 1
 		for(size_t i=0; i < columns.size(); i++) {
-			// STATA has separate storing functions for numbers and strings
-			// the dataset has to be created with the appropriate number of 
-			// columns and rows in a STATA macro before load is called
-			if(columns[i]->IsNumeric()) {
-				double val = columns[i]->AsNumber(rs);
-				// this did not work with SD_SAFEMODE enabled in stplugin.h
-				SF_vstore(i+1, row, val);
-			} else {
-				string val = columns[i]->AsString(rs);
-				SF_sstore(i+1, row, toStataString(val));
+			if( !columns[i]->IsNull(rs) ) {
+				// STATA has separate storing functions for numbers and strings
+				// the dataset has to be created with the appropriate number of 
+				// columns and rows in a STATA macro before load is called
+				if(columns[i]->IsNumeric()) {
+					double val = columns[i]->AsNumber(rs);
+					// this did not work with SD_SAFEMODE enabled in stplugin.h
+					SF_vstore(i+1, row, val);
+				} else {
+					string val = columns[i]->AsString(rs);
+					SF_sstore(i+1, row, toStataString(val));
+				}
 			}
 		}
     } 
@@ -218,8 +226,17 @@ STDLL stata_call(int argc, char *argv[])
 		string mode = upperCase(argv[0]);
 		// transform the rest of the options to a list of strings
 		vector<string> args;
-		for(int i=1; i<argc; i++)
-			args.push_back( argv[i] );
+		for(int i=1; i<argc; i++) {
+			string arg = argv[i];
+			arg = replaceAll(arg, "`", "\"");
+			// if we use a  filter condition with parantheses it will be one word including the "if"
+			if( arg.substr(0,3) == "if " ) {
+				args.push_back("if");
+				args.push_back(arg.substr(3));
+			} else {
+				args.push_back( arg );
+			}
+		}
 
 		if( mode == "DEFAULTS" ) {
 			return setDefaultOptions(args);
@@ -314,7 +331,7 @@ int main(int argc, char *argv[])
 			}
 			if(options->Table().find(" ") != string::npos) {
 				throw DwUseException( "Could not parse the table name (found \"" + options->Table() 
-										+ "\"). Are you missing a using keyword or mis-typed the one after the table name?" ); 
+										+ "\"). Are you missing a 'using' keyword or mis-typed the one after the table name?" ); 
 			}
 
 			// use the database		
