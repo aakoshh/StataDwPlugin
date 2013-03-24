@@ -98,6 +98,7 @@ public:
 class Translator {
   public:
 	  virtual string Translate(string msg) = 0;
+	  virtual const map<string,string>& Mapping() = 0;
 };
 
 
@@ -117,6 +118,12 @@ public :
 	string ColumnLabel();
 	// the final variable name that will appear in STATA
 	string VariableName();
+	// indicate whether the variable name can be labeled (translated)
+	bool IsLabelVariable();
+	// indicate whether the values in the column can be labeled (translated)
+	bool IsLabelValues();
+	// if values are labeled, return the mapping for STATA label generation
+	const map<string,string>& ValueLabels();
 	// the appropriate STATA datatype
 	string StataDataType();
 	// the format mask to show friendly values for dates
@@ -130,7 +137,6 @@ public :
 	double AsNumber(ResultSet* rs);
 	// retrieve the column value from a record as a (translated) string
 	string AsString(ResultSet* rs);
-	
 private :
 	DbColumnMetaData metaData; // to access name, type
 	int position; // which column is it
@@ -143,6 +149,7 @@ private :
 	bool isNumeric; 
 	bool isDate;
 	bool isTime;
+	bool translateContents;
 };
 
 

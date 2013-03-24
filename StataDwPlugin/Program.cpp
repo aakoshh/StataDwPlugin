@@ -119,6 +119,26 @@ int createDataSet( vector<string> args ) {
 			stata_vars    += (*ii)->VariableName() + " "; // TODO: spaces in labels will not work with the default mysql style macro
 			stata_types   += (*ii)->StataDataType() + " ";
 			stata_formats += (*ii)->StataFormat() + " ";
+
+			// print STATA commands to label variables
+			if( (*ii)->IsLabelVariable() ) {
+				// label variable REPRKOD6 "Almakompot"
+				string labelVar = "label variable " + (*ii)->VariableName() + "\"" + (*ii)->ColumnLabel() + "\"   \n";
+				stataDisplay(labelVar);
+			}
+			// instead of translating the column contents, print commands they can run to let STATA label them
+			if( (*ii)->IsLabelValues() ) {
+				// label define honap_label 1 "Január" 2 "Február"
+				// label values HONAP honap_label
+				string labelDef = "label define " + (*ii)->VariableName() + "_label ";
+				for( map<string,string>::const_iterator iil = (*ii)->ValueLabels().begin(); iil != (*ii)->ValueLabels().end(); ++iil ) {
+					labelDef +=  (*iil).first + " \"" + (*iil).second + "\" ";
+				}
+				labelDef += "\n";				
+				string labelVals = "label values " + (*ii)->VariableName() + " " + (*ii)->VariableName() + "_label \n";
+				stataDisplay(labelDef);
+				stataDisplay(labelVals);
+			}
 		}
 
 		// count the rows, next time we shall run the query as well

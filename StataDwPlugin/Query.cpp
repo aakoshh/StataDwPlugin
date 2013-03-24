@@ -42,6 +42,10 @@ public:
 			return this->missingLabel;
 		return msg;
 	}
+	// return a dictionary containing all labels
+	virtual const map<string,string>& Mapping() {
+		return this->labels;
+	}
 private:
 	map<string,string> labels;
 	string missingLabel;
@@ -125,6 +129,9 @@ class ValueTranslator : public DwTranslator {
 
 
 
+
+
+
 // class representing what we know about a column in the query
 DwColumn::DwColumn(	  DbColumnMetaData metaData, 
 					  int position,
@@ -142,6 +149,7 @@ DwColumn::DwColumn(	  DbColumnMetaData metaData,
 	this->isNumeric = stype.substr(0,3) != "str"; // STATA only has string and double macro setters
 	this->isDate = this->metaData.type == "DATE"; // will be numeric in STATA but cannot get as double
 	this->isTime = this->metaData.type == "TIMESTAMP";
+	this->translateContents = false; // we don't translate variable content in the dataset, we use STATA labeling
 }
 
 // free pointers
@@ -163,21 +171,17 @@ string DwColumn::ColumnName() {
 // the column label appear in STATA
 string DwColumn::ColumnLabel() {
 	// the label
-	string label = NULL;
+	string label = this->metaData.name;
 	if( this->variableTranslator != NULL ) {
-		label = this->variableTranslator->Translate(upperCase(this->metaData.name)); // VALTOZO is uppercase according to the spec.
+		label = this->variableTranslator->Translate(upperCase(label)); // VALTOZO is uppercase according to the spec.
 	}
 	return label;
 }
 
-// the final variable name
+// the final variable name in the dataset
 string DwColumn::VariableName() {
 	// the logical name
 	string name = this->metaData.name; // without quotes even if there should be one
-	// translate if necessary
-	if( this->variableTranslator != NULL ) {
-		name = this->variableTranslator->Translate(upperCase(name)); // VALTOZO is uppercase according to the spec.
-	}
 	// until we find a better way to split names in STATA we have to make sure there is no space in the labels
 	name = replaceAll(name, " ", "_");
 	// change casing if needed. 
@@ -191,7 +195,7 @@ string DwColumn::VariableName() {
 // the appropriate STATA datatype
 string DwColumn::StataDataType() {
 	// MetaData gives the underlying data type which may be translated to string
-	if( this->valueTranslator != NULL ) {
+	if( this->translateContents && this->valueTranslator != NULL ) {
 		// varchar2 or int dictionary value will be translated to string
 		return "str100"; // the size of MEGNEVEZES
 	}
@@ -260,6 +264,14 @@ bool DwColumn::IsNull(ResultSet* rs) {
 	return rs->isNull(this->position);
 }
 
+bool DwColumn::IsLabelVariable() {
+	return this->variableTranslator != NULL;
+}
+
+bool DwColumn::IsLabelValues() {
+	return this->valueTranslator != NULL;
+}
+
 // retrieve the column value from a record as number
 double DwColumn::AsNumber(ResultSet* rs) {
 	if(this->isDate) {
@@ -291,12 +303,23 @@ double DwColumn::AsNumber(ResultSet* rs) {
 // retrieve the column value from a record as a (translated) string
 string DwColumn::AsString(ResultSet* rs) {
 	string val = rs->getString(this->position);
-	if( this->valueTranslator != NULL ) {
+	if( this->translateContents && this->valueTranslator != NULL ) {
 		return this->valueTranslator->Translate(val);
 	}
 	return val;
 }
 	
+const map<string,string>& DwColumn::ValueLabels() {
+	if( this->IsLabelValues() ) {
+		return this->variableTranslator->Mapping();
+	}
+	// return empty mapping
+	map<string,string> labels;
+	return labels;
+}
+
+
+
 
 
 DwUseQuery::DwUseQuery(DwUseOptions* options) {
@@ -341,10 +364,8 @@ DwUseQuery::DwUseQuery(DwUseOptions* options) {
 	// we'll need to know what to translate
 	set<string> transVars = this->options->LabelVariables();
 	set<string> transVals = this->options->LabelValues();
-	//bool isTransAllVars   = this->options->IsLabelVariables() && transVars.size() == 0;
+	bool isTransAllVars   = this->options->IsLabelVariables() && transVars.size() == 0;
 	bool isTransAllVals   = this->options->IsLabelValues()    && transVals.size() == 0;
-	bool isTransAllVars   = false; // nem a valtozokat kell atnevezni
-	//bool isTransAllVals   = false; // nem az ertekeket kell atnevezni
 	// create meta data holders
 	for(size_t i=0; i<colMeta.size(); i++) {
 		// get the column name so we can decide if it needs tranlation or not
