@@ -71,11 +71,12 @@ class VariableTranslator : public DwTranslator {
 			              " max(MEGNEVEZES) max_megnevezes, "
 			              " count(distinct MEGNEVEZES) count_distinct_megnevezes"
 			       " from DIMN.DIM_VALTOZO_CIMKEK "
-			       " where TENYTABLA = :p_table "
+				   " where TENYTABLA = :p_table and STATUSZ = :p_statusz"
 			       " group by VALTOZO) ";
 		// select all and fill up mapping
 		vector<string> params;
 		params.push_back(upperCase(table));
+		params.push_back("I");
 		try {
 			conn->Select(this->Adapter(), sql, params);
 		} catch( SQLException ex ) {
@@ -105,12 +106,13 @@ class ValueTranslator : public DwTranslator {
 			             " max(MEGNEVEZES) max_megnevezes, "
 			             " count(distinct MEGNEVEZES) count_distinct_megnevezes"
 			      " from DIMN.DIM_VALTOZO_ERTEK_CIMKEK  "
-			      " where TENYTABLA = :p_table and VALTOZO = :p_column"
+				  " where TENYTABLA = :p_table and VALTOZO = :p_column and STATUSZ = :p_statusz"
 			      " group by KOD) ";
 		// select all and fill up mapping
 		vector<string> params;
 		params.push_back(upperCase(table));
 		params.push_back(upperCase(column));
+		params.push_back("I");
 		try {
 			conn->Select(this->Adapter(), sql, params);
 		} catch( SQLException ex ) {
@@ -156,6 +158,16 @@ string DwColumn::ColumnName() {
 	if( this->metaData.isQuoted ) // in the test tables there are columns like "Szuletesi_ido" which only work with double quotes and exact casing
 		return "\"" + this->metaData.name + "\"";
 	return this->metaData.name;
+}
+
+// the column label appear in STATA
+string DwColumn::ColumnLabel() {
+	// the label
+	string label = NULL;
+	if( this->variableTranslator != NULL ) {
+		label = this->variableTranslator->Translate(upperCase(this->metaData.name)); // VALTOZO is uppercase according to the spec.
+	}
+	return label;
 }
 
 // the final variable name
@@ -329,8 +341,10 @@ DwUseQuery::DwUseQuery(DwUseOptions* options) {
 	// we'll need to know what to translate
 	set<string> transVars = this->options->LabelVariables();
 	set<string> transVals = this->options->LabelValues();
-	bool isTransAllVars   = this->options->IsLabelVariables() && transVars.size() == 0;
+	//bool isTransAllVars   = this->options->IsLabelVariables() && transVars.size() == 0;
 	bool isTransAllVals   = this->options->IsLabelValues()    && transVals.size() == 0;
+	bool isTransAllVars   = false; // nem a valtozokat kell atnevezni
+	//bool isTransAllVals   = false; // nem az ertekeket kell atnevezni
 	// create meta data holders
 	for(size_t i=0; i<colMeta.size(); i++) {
 		// get the column name so we can decide if it needs tranlation or not
@@ -386,6 +400,12 @@ string DwUseQuery::QuerySQL() {
 		if(whereSql != "")
 			whereSql = "(" + whereSql + ") and ";
 		whereSql += "rownum <= " + toString(this->options->Limit());
+	}
+	else if (this->options->Limit() == 0 || this->options->IsNullData()) {
+		if (whereSql != "") {
+			whereSql = "(" + whereSql + ") and ";
+		}
+		whereSql += "rownum = 0";
 	}
 	if( whereSql != "" ) 
 		sql += " where " + whereSql;

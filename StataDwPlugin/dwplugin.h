@@ -113,6 +113,8 @@ public :
 	~DwColumn(void);
 	// the column name in the database
 	string ColumnName();
+	// the column label in STATA
+	string ColumnLabel();
 	// the final variable name that will appear in STATA
 	string VariableName();
 	// the appropriate STATA datatype
