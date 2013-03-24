@@ -157,6 +157,13 @@ int DwUseOptions::Limit() {
 	return atoi(limit.c_str());
 }
 
+// for basic data and formatting we can use the macro variables but for labeling we can't
+bool DwUseOptions::IsPrintCommands() {
+	return this->HasOption("print_commands") 
+		|| this->IsLabelValues() 
+		|| this->IsLabelValues(); 
+}
+
 
 void DwUseOptions::AddDefaults(DwUseOptions* defaults) {
 

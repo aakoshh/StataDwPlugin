@@ -71,6 +71,10 @@ public:
 	bool IsLabelValues();
 	// which variable values to label. if empty and IsLabelValues is true then all of them
 	set<string> LabelValues();
+
+	// the option to print STATA commands
+	bool IsPrintCommands();
+
 	// the original options for debugging
 	const map<string,string>& Options();
 	void AddDefaults(DwUseOptions* defaults);
@@ -98,6 +102,7 @@ public:
 class Translator {
   public:
 	  virtual string Translate(string msg) = 0;
+	  virtual bool HasTranslation(string msg) = 0;
 	  virtual const map<string,string>& Mapping() = 0;
 };
 

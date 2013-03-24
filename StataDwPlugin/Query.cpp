@@ -46,6 +46,9 @@ public:
 	virtual const map<string,string>& Mapping() {
 		return this->labels;
 	}
+	virtual bool HasTranslation(string msg) {
+		return this->labels.find(msg) != this->labels.end();
+	}
 private:
 	map<string,string> labels;
 	string missingLabel;
@@ -141,6 +144,7 @@ DwColumn::DwColumn(	  DbColumnMetaData metaData,
 	this->metaData = metaData;
 	this->position = position;
 	this->variableCasing = variableCasing;
+	this->translateContents = false; // we don't translate variable content in the dataset, we use STATA labeling
 	this->variableTranslator = variableTranslator;
 	// pass NULL if we don't want any translation
 	this->valueTranslator = valueTranslator;
@@ -149,7 +153,6 @@ DwColumn::DwColumn(	  DbColumnMetaData metaData,
 	this->isNumeric = stype.substr(0,3) != "str"; // STATA only has string and double macro setters
 	this->isDate = this->metaData.type == "DATE"; // will be numeric in STATA but cannot get as double
 	this->isTime = this->metaData.type == "TIMESTAMP";
-	this->translateContents = false; // we don't translate variable content in the dataset, we use STATA labeling
 }
 
 // free pointers
@@ -176,6 +179,12 @@ string DwColumn::ColumnLabel() {
 		label = this->variableTranslator->Translate(upperCase(label)); // VALTOZO is uppercase according to the spec.
 	}
 	return label;
+}
+
+// only show that we can label a column if we really have a translation for it
+bool DwColumn::IsLabelVariable() {
+	return this->variableTranslator != NULL 
+		&& this->variableTranslator->HasTranslation(upperCase(this->metaData.name));
 }
 
 // the final variable name in the dataset
@@ -227,7 +236,7 @@ string DwColumn::StataDataType() {
 // the appropriate STATA format 
 // for now these are the same values as Stata assigns by default copied after using "describe"
 string DwColumn::StataFormat() {
-	if( this->valueTranslator != NULL ) {
+	if( this->translateContents && this->valueTranslator != NULL ) {
 		return "%100s"; 
 	}
 	// http://www.stata.com/help.cgi?format
@@ -262,14 +271,6 @@ bool DwColumn::IsNumeric() {
 
 bool DwColumn::IsNull(ResultSet* rs) {
 	return rs->isNull(this->position);
-}
-
-bool DwColumn::IsLabelVariable() {
-	return this->variableTranslator != NULL;
-}
-
-bool DwColumn::IsLabelValues() {
-	return this->valueTranslator != NULL;
 }
 
 // retrieve the column value from a record as number
@@ -308,10 +309,16 @@ string DwColumn::AsString(ResultSet* rs) {
 	}
 	return val;
 }
-	
+
+// only show that we can label a variable if there are some translations as well
+bool DwColumn::IsLabelValues() {
+	return this->valueTranslator != NULL 
+		&& this->ValueLabels().size() > 0;
+}
+
 const map<string,string>& DwColumn::ValueLabels() {
-	if( this->IsLabelValues() ) {
-		return this->variableTranslator->Mapping();
+	if( this->valueTranslator != NULL ) {
+		return this->valueTranslator->Mapping();
 	}
 	// return empty mapping
 	map<string,string> labels;

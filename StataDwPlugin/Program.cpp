@@ -35,6 +35,22 @@ void stataDisplay( string msg ) {
 }
 
 
+class CommandPrinter {
+public: 
+	CommandPrinter(DwUseOptions* opts) : options(opts) {
+	}
+	// called with one row at a time
+    void operator()( string cmd ) { 
+		if( this->options->IsPrintCommands() ) {
+			stataDisplay(cmd);
+			stataDisplay("\n");
+		}
+    } 
+private:
+	DwUseOptions* options;
+};
+
+
 
 // following functions are called by stata_call function down below
 // start STATA with a start.bat file that adds the path to the Oracle client DLL-s first
@@ -79,6 +95,9 @@ int createDataSet( vector<string> args ) {
 		DwUseOptions* options = parser->Parse( args );
 		delete parser;
 
+		// print commands to the output window
+		CommandPrinter printCommand(options);
+
 		// merge the parsed options with global defaults
 		if( defaultOptions != NULL )
 			options->AddDefaults(defaultOptions);
@@ -114,17 +133,38 @@ int createDataSet( vector<string> args ) {
 		// if there is anything wrong the query will raise exceptions
 		query = new DwUseQuery(options); // will free options on its own
 
+		// will print STATA commands to the output window that can be copy pasted
+		printCommand("* use the following commands to create the dataset in Stata: ");
+		printCommand("");
+
+		// count the rows, next time we shall run the query as well
+		stata_obs = toString(query->RowCount());
+		printCommand("set obs " + stata_obs);
+		printCommand("");
+
 		// display labels
 		for( vector<DwColumn*>::const_iterator ii = query->Columns().begin(); ii != query->Columns().end(); ii++ ) {
 			stata_vars    += (*ii)->VariableName() + " "; // TODO: spaces in labels will not work with the default mysql style macro
 			stata_types   += (*ii)->StataDataType() + " ";
 			stata_formats += (*ii)->StataFormat() + " ";
 
-			// print STATA commands to label variables
+			// STATA variable creation command with formatting
+			string cmd = "qui gen "+(*ii)->StataDataType()+" "+(*ii)->VariableName();
+			if( (*ii)->IsNumeric() ) {
+				cmd += " . ";
+			} else {
+				cmd += " \"\" ";
+			}
+			printCommand(cmd);
+			cmd = "format "+(*ii)->VariableName()+" "+(*ii)->StataFormat();
+			printCommand(cmd);
+
+			// STATA commands to label variables
 			if( (*ii)->IsLabelVariable() ) {
 				// label variable REPRKOD6 "Almakompot"
-				string labelVar = "label variable " + (*ii)->VariableName() + "\"" + (*ii)->ColumnLabel() + "\"   \n";
-				stataDisplay(labelVar);
+				string labelVar = "label variable " 
+					+ (*ii)->VariableName() + " \"" + (*ii)->ColumnLabel() + "\" ";
+				printCommand(labelVar);
 			}
 			// instead of translating the column contents, print commands they can run to let STATA label them
 			if( (*ii)->IsLabelValues() ) {
@@ -133,16 +173,13 @@ int createDataSet( vector<string> args ) {
 				string labelDef = "label define " + (*ii)->VariableName() + "_label ";
 				for( map<string,string>::const_iterator iil = (*ii)->ValueLabels().begin(); iil != (*ii)->ValueLabels().end(); ++iil ) {
 					labelDef +=  (*iil).first + " \"" + (*iil).second + "\" ";
-				}
-				labelDef += "\n";				
-				string labelVals = "label values " + (*ii)->VariableName() + " " + (*ii)->VariableName() + "_label \n";
-				stataDisplay(labelDef);
-				stataDisplay(labelVals);
+				}			
+				string labelVals = "label values " + (*ii)->VariableName() + " " + (*ii)->VariableName() + "_label";
+				printCommand(labelDef);
+				printCommand(labelVals);
 			}
+			printCommand("");
 		}
-
-		// count the rows, next time we shall run the query as well
-		stata_obs = toString(query->RowCount());
 
 		// Store variable names/types and observation number into Stata macro
 		SF_macro_save("_vars",    toStataString(stata_vars));
@@ -151,7 +188,7 @@ int createDataSet( vector<string> args ) {
 		SF_macro_save("_obs",     toStataString(stata_obs));
 
 		// print out for the users information
-		stataDisplay("Saved data size ("+stata_obs+" rows), column names, types ("+toString(query->Columns().size())+" cols) and suggested formats into marco variables called _obs, _vars, _types and _formats. \n");
+		stataDisplay("* saved data size ("+stata_obs+" rows), column names, types ("+toString(query->Columns().size())+" cols) and suggested formats into marco variables called _obs, _vars, _types and _formats. \n");
 	} 
 	// show errors
 	catch( DwUseException ex ) { // for some reason catching the base exception class doesn't work while in STATA :(
