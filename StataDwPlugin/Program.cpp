@@ -2,12 +2,14 @@
 #include "dwplugin.h"
 #include "dwuse.h"
 #include "strutils.h"
+#include <iostream>
+#include <fstream>
 
 
 // variables that need to be remembered between calls
 DwUseOptions* defaultOptions = NULL;
 DwUseQuery* query = NULL;
-
+const string COMMAND_LOG_FILE = "dwcommands.do";
 
 // convert string to something STATA can print
 char* toStataString( string msg ) {
@@ -38,16 +40,24 @@ void stataDisplay( string msg ) {
 class CommandPrinter {
 public: 
 	CommandPrinter(DwUseOptions* opts) : options(opts) {
+		// the file is going to be created in the Stata directory
+		this->commandlog.open(COMMAND_LOG_FILE, ios::trunc);
+	}
+	// close file at the end
+	~CommandPrinter(void) {
+		this->commandlog.close();
 	}
 	// called with one row at a time
     void operator()( string cmd ) { 
-		if( this->options->IsPrintCommands() ) {
-			stataDisplay(cmd);
-			stataDisplay("\n");
+		if( this->options->IsLogCommands() ) {
+			//stataDisplay(cmd);
+			//stataDisplay("\n");
+			this->commandlog << cmd << endl;
 		}
     } 
 private:
 	DwUseOptions* options;
+	ofstream commandlog;
 };
 
 
@@ -134,7 +144,7 @@ int createDataSet( vector<string> args ) {
 		query = new DwUseQuery(options); // will free options on its own
 
 		// will print STATA commands to the output window that can be copy pasted
-		printCommand("* use the following commands to create the dataset in Stata: ");
+		printCommand("* use the following commands to create the " +options->Table()+ " dataset in Stata: ");
 		printCommand("");
 
 		// count the rows, next time we shall run the query as well
@@ -149,11 +159,11 @@ int createDataSet( vector<string> args ) {
 			stata_formats += (*ii)->StataFormat() + " ";
 
 			// STATA variable creation command with formatting
-			string cmd = "qui gen "+(*ii)->StataDataType()+" "+(*ii)->VariableName();
+			string cmd = "qui gen "+(*ii)->StataDataType()+" "+(*ii)->VariableName() + " = ";
 			if( (*ii)->IsNumeric() ) {
-				cmd += " . ";
+				cmd += ".";
 			} else {
-				cmd += " \"\" ";
+				cmd += "\"\"";
 			}
 			printCommand(cmd);
 			cmd = "format "+(*ii)->VariableName()+" "+(*ii)->StataFormat();
@@ -181,6 +191,11 @@ int createDataSet( vector<string> args ) {
 			printCommand("");
 		}
 
+		// tell the user where to look for the .do file
+		if( options->IsLogCommands() ) {
+			stataDisplay("Saved commands needed to create the dataset into the file \""+COMMAND_LOG_FILE+"\" in the Stata directory. \n");
+		}
+
 		// Store variable names/types and observation number into Stata macro
 		SF_macro_save("_vars",    toStataString(stata_vars));
 		SF_macro_save("_types",   toStataString(stata_types));
@@ -188,7 +203,7 @@ int createDataSet( vector<string> args ) {
 		SF_macro_save("_obs",     toStataString(stata_obs));
 
 		// print out for the users information
-		stataDisplay("* saved data size ("+stata_obs+" rows), column names, types ("+toString(query->Columns().size())+" cols) and suggested formats into marco variables called _obs, _vars, _types and _formats. \n");
+		stataDisplay("Saved data size ("+stata_obs+" rows), column names, types ("+toString(query->Columns().size())+" cols) and suggested formats into marco variables called _obs, _vars, _types and _formats. \n");
 	} 
 	// show errors
 	catch( DwUseException ex ) { // for some reason catching the base exception class doesn't work while in STATA :(

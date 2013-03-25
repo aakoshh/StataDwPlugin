@@ -158,8 +158,8 @@ int DwUseOptions::Limit() {
 }
 
 // for basic data and formatting we can use the macro variables but for labeling we can't
-bool DwUseOptions::IsPrintCommands() {
-	return this->HasOption("print_commands") 
+bool DwUseOptions::IsLogCommands() {
+	return this->HasOption("log_commands") 
 		|| this->IsLabelValues() 
 		|| this->IsLabelValues(); 
 }

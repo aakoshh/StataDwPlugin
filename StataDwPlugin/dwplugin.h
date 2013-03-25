@@ -72,8 +72,8 @@ public:
 	// which variable values to label. if empty and IsLabelValues is true then all of them
 	set<string> LabelValues();
 
-	// the option to print STATA commands
-	bool IsPrintCommands();
+	// the option to print STATA commands to a .do file
+	bool IsLogCommands();
 
 	// the original options for debugging
 	const map<string,string>& Options();
