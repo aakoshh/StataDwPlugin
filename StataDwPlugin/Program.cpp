@@ -105,7 +105,7 @@ int createDataSet( vector<string> args ) {
 		DwUseOptions* options = parser->Parse( args );
 		delete parser;
 
-		// print commands to the output window
+		// print commands to a log file
 		CommandPrinter printCommand(options);
 
 		// merge the parsed options with global defaults
@@ -293,7 +293,7 @@ STDLL stata_call(int argc, char *argv[])
 		SF_display("1. Call the plugin in CREATE mode to read table definition and create STATA macros for variables: \n");
 		SF_display("	plugin call DW_use, CREATE <table> \n") ;
 		SF_display("	plugin call DW_use, CREATE [<varlist>] [if <expr>] using <table> [nulldata] [lowercase|uppercase] [label_variable [<label_variable_varlist>]] [label_values [<label_values_varlist>]] username <user> password <pass> database <db> [limit <n>] \n") ;
-		SF_display("2. Use the _vars, _types and _obs macro variables to create the STATA dataset. \n");
+		SF_display("2. Use the _vars, _types and _obs macro variables to create the STATA dataset, or copy the contents of dwcommands.do into the command window. \n");
 		SF_display("3. Call the plugin in LOAD mode to fill the dataset: \n");
 		SF_display("	plugin call DW_use, LOAD \n") ;
 	} else {
