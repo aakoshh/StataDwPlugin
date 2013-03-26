@@ -143,7 +143,7 @@ int createDataSet( vector<string> args ) {
 		// if there is anything wrong the query will raise exceptions
 		query = new DwUseQuery(options); // will free options on its own
 
-		// will print STATA commands to the output window that can be copy pasted
+		// will print STATA commands that can be executed later
 		printCommand("* use the following commands to create the " +options->Table()+ " dataset in Stata: ");
 		printCommand("");
 
@@ -293,7 +293,7 @@ STDLL stata_call(int argc, char *argv[])
 		SF_display("1. Call the plugin in CREATE mode to read table definition and create STATA macros for variables: \n");
 		SF_display("	plugin call DW_use, CREATE <table> \n") ;
 		SF_display("	plugin call DW_use, CREATE [<varlist>] [if <expr>] using <table> [nulldata] [lowercase|uppercase] [label_variable [<label_variable_varlist>]] [label_values [<label_values_varlist>]] username <user> password <pass> database <db> [limit <n>] \n") ;
-		SF_display("2. Use the _vars, _types and _obs macro variables to create the STATA dataset, or copy the contents of dwcommands.do into the command window. \n");
+		SF_display("2. Use the _vars, _types and _obs macro variables to create the STATA dataset, or execute the logged commands with \"do dwcommands.do\". \n");
 		SF_display("3. Call the plugin in LOAD mode to fill the dataset: \n");
 		SF_display("	plugin call DW_use, LOAD \n") ;
 	} else {
