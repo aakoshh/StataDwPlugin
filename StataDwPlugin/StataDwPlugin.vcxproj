@@ -82,6 +82,7 @@
     <ClInclude Include="strutils.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Columns.cpp" />
     <ClCompile Include="DbConnect.cpp" />
     <ClCompile Include="Options.cpp" />
     <ClCompile Include="Program.cpp" />
