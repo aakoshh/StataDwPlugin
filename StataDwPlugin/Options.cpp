@@ -56,12 +56,24 @@ DwUseOptions* DwUseOptionParser::Parse(vector<string> words) {
 	// parse the options
 	map<string,string> options = parser->Parse( words );
 	delete parser;
-	
+
 	// create a meaningful options object
 	DwUseOptions* useOptions = new DwUseOptions( options );	
 	return useOptions;
 }
 
+
+void DwUseOptions::ThrowIfHasValue(string name) {
+	if( HasOption(name) && GetOption(name) != "" )
+		throw DwUseException( "Invalid value for '"+name+"': " + GetOption(name) ); 
+}
+
+// check that by mistake the next word was not mistyped and thus became part of this option
+void DwUseOptions::Validate() {
+	ThrowIfHasValue("lowercase");
+	ThrowIfHasValue("uppercase");
+	ThrowIfHasValue("nulldata");
+}
 
 
 DwUseOptions::DwUseOptions(map<string, string> options) {

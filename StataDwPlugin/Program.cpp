@@ -127,6 +127,8 @@ int createDataSet( vector<string> args ) {
 			throw DwUseException( "Could not parse the table name (found \"" + options->Table() 
 									+ "\"). Are you missing a using keyword or mis-typed the one after the table name?" ); 
 		}
+		// check non-sense
+		options->Validate();
 
 		// http://www.stata.com/support/faqs/data-management/using-plugin-to-connect-to-database/
 		// http://www.stata.com/support/faqs/data/connect_to_mysql.c

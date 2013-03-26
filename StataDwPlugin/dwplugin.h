@@ -47,6 +47,7 @@ class DwUseOptions
 public: 
 	// constructor uses the options parsed
 	DwUseOptions(map<string,string> options);	
+	void Validate();
 	// login credentials
 	string Username();
 	string Password();
@@ -83,6 +84,7 @@ private :
 	bool HasOption(string name);
 	string GetOption(string name);
 	vector<string> GetOptionAsList(string name, bool toUpperCase=false);
+	void ThrowIfHasValue(string name);
 };
 
 // turn a list of command line arguments into a DwUseOption object we can use
