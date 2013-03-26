@@ -48,8 +48,10 @@ DwUseOptions* DwUseOptionParser::Parse(vector<string> words) {
 	bool hasUsing = std::find(words.begin(), words.end(), "using") != words.end();
 
 	// if it contains using somewhere we can start with variables (if missing it will be an empty string, if the list is there it will be expected)
-	if( hasUsing ) words.insert(words.begin(), "variables");
-	else		   words.insert(words.begin(), "using"); 
+	if( !hasUsing ) 
+		words.insert(words.begin(), "using"); 
+	else if( words[0] != "if" && words[0] != "using" )
+		words.insert(words.begin(), "variables");
 
 	// parse the options
 	map<string,string> options = parser->Parse( words );
