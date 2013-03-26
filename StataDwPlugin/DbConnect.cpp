@@ -5,7 +5,9 @@ DbConnect::DbConnect(string user, string password, string db) {
 	this->user = user;
 	this->password = password;
 	this->db = db;
-	this->env = Environment::createEnvironment(Environment::DEFAULT);
+	// use the values from NLS_CHARACTERSET and NLS_NCHAR_CHARACTERSET to handle acute letters.
+	// can be that the do command will not recognize file encoding
+	this->env = Environment::createEnvironment("UTF8","UTF8",Environment::DEFAULT);
 	this->conn = NULL;
 	//try { 
 		this->conn = this->env->createConnection(user, password, db); 
