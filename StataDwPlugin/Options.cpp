@@ -2,7 +2,7 @@
 #include "strutils.h"
 #include <algorithm> 
 
-
+bool ALWAYS_LOG_COMMANDS = true;
 
 OptionParser::OptionParser(set<string> keys) {
 	this->keys = keys;
@@ -173,7 +173,8 @@ int DwUseOptions::Limit() {
 
 // for basic data and formatting we can use the macro variables but for labeling we can't
 bool DwUseOptions::IsLogCommands() {
-	return this->HasOption("log_commands") 
+	return ALWAYS_LOG_COMMANDS 
+		|| this->HasOption("log_commands") 
 		|| this->IsLabelValues() 
 		|| this->IsLabelValues(); 
 }
