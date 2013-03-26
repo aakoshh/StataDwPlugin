@@ -1,5 +1,6 @@
 #include "dwplugin.h"
 #include "strutils.h" 
+#include <algorithm> 
 
 
 // translator where there is no need
@@ -129,6 +130,13 @@ class ValueTranslator : public DwTranslator {
 };
 
 
+// check that all labels selected for translation are valid column names
+void CheckLabels( set<string> selection, vector<string> valid ) {
+	for(set<string>::const_iterator ii = selection.begin(); ii != selection.end(); ii++) {
+		if(std::find(valid.begin(), valid.end(), *ii) == valid.end())
+			throw DwUseException( "Invalid column name for translation: " + (*ii) ); 
+	}
+}
 
 
 DwUseQuery::DwUseQuery(DwUseOptions* options) {
@@ -163,6 +171,7 @@ DwUseQuery::DwUseQuery(DwUseOptions* options) {
 	probeSql += " from " + this->options->Table() + " where 1=2 ";
 	// run the probe query and collect columns
 	vector<DbColumnMetaData> colMeta;
+	vector<string> colNames;
 	try {
 		colMeta = this->conn->Describe(probeSql);
 	} catch( SQLException ex ) {
@@ -192,7 +201,11 @@ DwUseQuery::DwUseQuery(DwUseOptions* options) {
 									colName) : NULL 
 			);
 		this->columns.push_back( dwCol );
+		colNames.push_back( upperCase(colName) ); // to test translations
 	}
+	// check that all the variables selected for labeling are valid column names
+	CheckLabels( transVars, colNames );
+	CheckLabels( transVals, colNames );
 };
 
 
