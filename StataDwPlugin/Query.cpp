@@ -314,6 +314,7 @@ string DwColumn::AsString(ResultSet* rs) {
 bool DwColumn::IsLabelValues() {
 	return this->valueTranslator != NULL 
 		&& this->ValueLabels().size() > 0;
+		// && this->IsNumeric(); // Stata says we cannot label strings, but leave it for now for testing
 }
 
 const map<string,string>& DwColumn::ValueLabels() {
