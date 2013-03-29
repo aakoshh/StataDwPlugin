@@ -83,7 +83,10 @@ string DwColumn::StataDataType() {
 	// decide following the specification
 	if( type == "DATE" ) return "double";
 	if( type == "TIMESTAMP" ) return "double";
-	if( type == "VARCHAR2" ) return "str" + toString(size);
+	if( type == "VARCHAR2" ) {
+		size = size > 244 ? 244 : size;
+		return "str" + toString(size);
+	}
 	if( type == "NUMBER" ) {
 		if( scale == 0 ) {
 			if( precision <= 2 ) return "byte";
@@ -96,7 +99,7 @@ string DwColumn::StataDataType() {
 		}
 	}
 	if( type == "INTEGER" ) return "long";
-	return "str255"; // unknown
+	return "str244"; // unknown
 }
 
 
@@ -114,7 +117,10 @@ string DwColumn::StataFormat() {
 	// decide following the specification
 	if( type == "DATE" ) return "%td";
 	if( type == "TIMESTAMP" ) return "%tc";
-	if( type == "VARCHAR2" ) return "%" + toString(size) + "s";
+	if( type == "VARCHAR2" ) {
+		size = size > 244 ? 244 : size;
+		return "%" + toString(size) + "s";
+	}
 	if( type == "NUMBER" ) {
 		if( scale == 0 ) {
 			if( precision <= 2 ) return "%8.0g";
@@ -127,7 +133,7 @@ string DwColumn::StataFormat() {
 		}
 	}
 	if( type == "INTEGER" ) return "%12.0g";
-	return "%255s"; // unknown
+	return "%244s"; // unknown
 }
 
 // STATA can store either double or string
