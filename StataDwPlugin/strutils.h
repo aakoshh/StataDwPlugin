@@ -28,4 +28,8 @@ string toString(T i) // convert number to string
     return s.str();
 }
 
+
+char *UnicodeToCodePage(int codePage, const wchar_t *src);
+wchar_t *CodePageToUnicode(int codePage, const char *src);
+
 #endif

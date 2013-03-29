@@ -41,23 +41,32 @@ class CommandPrinter {
 public: 
 	CommandPrinter(DwUseOptions* opts) : options(opts) {
 		// the file is going to be created in the Stata directory
-		this->commandlog.open(COMMAND_LOG_FILE, ios::trunc);
+		//this->commandlog.open(COMMAND_LOG_FILE, ios::trunc | ios::binary);
+		this->commandlog = fopen(COMMAND_LOG_FILE.c_str(), "w");
 	}
 	// close file at the end
 	~CommandPrinter(void) {
-		this->commandlog.close();
+		//this->commandlog.close();
+		fclose(this->commandlog);
 	}
 	// called with one row at a time
     void operator()( string cmd ) { 
 		if( this->options->IsLogCommands() ) {
 			//stataDisplay(cmd);
 			//stataDisplay("\n");
-			this->commandlog << cmd << endl;
+			// this->commandlog << cmd << endl;
+			// Now convert utf-8 back to ANSI:
+			wchar_t *wText = CodePageToUnicode(65001,cmd.c_str());
+			char *ansiText = UnicodeToCodePage(1252,wText);
+			fprintf(this->commandlog,"%s\n",ansiText);
+			delete [] ansiText;
+			delete [] wText;
 		}
     } 
 private:
 	DwUseOptions* options;
-	ofstream commandlog;
+	//ofstream commandlog;
+	FILE* commandlog;
 };
 
 
