@@ -196,8 +196,10 @@ int createDataSet( vector<string> args ) {
 					labelDef +=  (*iil).first + " \"" + (*iil).second + "\" ";
 				}			
 				string labelVals = "label values " + (*ii)->VariableName() + " " + (*ii)->VariableName() + "_label";
-				printCommand(labelDef);
-				printCommand(labelVals);
+				// Stata doesn't let us label string, but for debug we can print them in comments (otherwise they stop processing)
+				string toggle = (*ii)->IsNumeric() ? "" : "* "; 
+				printCommand(toggle+labelDef);
+				printCommand(toggle+labelVals);
 			}
 			printCommand("");
 		}
