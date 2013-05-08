@@ -244,7 +244,7 @@ string DwUseQuery::QuerySQL() {
 			whereSql = "(" + whereSql + ") and ";
 		whereSql += "rownum <= " + toString(this->options->Limit());
 	}
-	else if (this->options->Limit() == 0 || this->options->IsNullData()) {
+	else if (this->options->IsNullData()) {
 		if (whereSql != "") {
 			whereSql = "(" + whereSql + ") and ";
 		}
