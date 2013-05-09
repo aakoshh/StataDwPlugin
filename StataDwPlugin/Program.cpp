@@ -154,14 +154,20 @@ int createDataSet( vector<string> args ) {
 		// if there is anything wrong the query will raise exceptions
 		query = new DwUseQuery(options); // will free options on its own
 
+		// the NULLDATA option means we just want to put labels on an existing dataset
+		bool printDataCommands = !options->IsNullData();
+		bool printLabelCommands = true;
+
 		// will print STATA commands that can be executed later
 		printCommand("* use the following commands to create the " +options->Table()+ " dataset in Stata: ");
 		printCommand("");
 
 		// count the rows, next time we shall run the query as well
 		stata_obs = toString(query->RowCount());
-		printCommand("set obs " + stata_obs);
-		printCommand("");
+		if( printDataCommands ) {
+			printCommand("set obs " + stata_obs);
+			printCommand("");
+		}
 
 		// display labels
 		for( vector<DwColumn*>::const_iterator ii = query->Columns().begin(); ii != query->Columns().end(); ii++ ) {
@@ -170,38 +176,42 @@ int createDataSet( vector<string> args ) {
 			stata_formats += (*ii)->StataFormat() + " ";
 
 			// STATA variable creation command with formatting
-			string cmd = "qui gen "+(*ii)->StataDataType()+" "+(*ii)->VariableName() + " = ";
-			if( (*ii)->IsNumeric() ) {
-				cmd += ".";
-			} else {
-				cmd += "\"\"";
+			if( printDataCommands ) {
+				string cmd = "qui gen "+(*ii)->StataDataType()+" "+(*ii)->VariableName() + " = ";
+				if( (*ii)->IsNumeric() ) {
+					cmd += ".";
+				} else {
+					cmd += "\"\"";
+				}			
+				printCommand(cmd);
+				cmd = "format "+(*ii)->VariableName()+" "+(*ii)->StataFormat();
+				printCommand(cmd);
 			}
-			printCommand(cmd);
-			cmd = "format "+(*ii)->VariableName()+" "+(*ii)->StataFormat();
-			printCommand(cmd);
 
 			// STATA commands to label variables
-			if( (*ii)->IsLabelVariable() ) {
-				// label variable REPRKOD6 "Almakompot"
-				string labelVar = "label variable " 
-					+ (*ii)->VariableName() + " \"" + (*ii)->ColumnLabel() + "\" ";
-				printCommand(labelVar);
-			}
-			// instead of translating the column contents, print commands they can run to let STATA label them
-			if( (*ii)->IsLabelValues() ) {
-				// label define honap_label 1 "Január" 2 "Február"
-				// label values HONAP honap_label
-				string labelDef = "label define " + (*ii)->VariableName() + "_label ";
-				for( map<string,string>::const_iterator iil = (*ii)->ValueLabels().begin(); iil != (*ii)->ValueLabels().end(); ++iil ) {
-					labelDef +=  (*iil).first + " \"" + (*iil).second + "\" ";
-				}			
-				string labelVals = "label values " + (*ii)->VariableName() + " " + (*ii)->VariableName() + "_label";
-				// Stata doesn't let us label string, but for debug we can print them in comments (otherwise they stop processing)
-				string toggle = (*ii)->IsNumeric() ? "" : "* "; 
-				printCommand(toggle+labelDef);
-				printCommand(toggle+labelVals);
-			}
-			printCommand("");
+			if( printLabelCommands ) {
+				if( (*ii)->IsLabelVariable() ) {
+					// label variable REPRKOD6 "Almakompot"
+					string labelVar = "label variable " 
+						+ (*ii)->VariableName() + " \"" + (*ii)->ColumnLabel() + "\" ";
+					printCommand(labelVar);
+				}
+				// instead of translating the column contents, print commands they can run to let STATA label them
+				if( (*ii)->IsLabelValues() ) {
+					// label define honap_label 1 "Január" 2 "Február"
+					// label values HONAP honap_label
+					string labelDef = "label define " + (*ii)->VariableName() + "_label ";
+					for( map<string,string>::const_iterator iil = (*ii)->ValueLabels().begin(); iil != (*ii)->ValueLabels().end(); ++iil ) {
+						labelDef +=  (*iil).first + " \"" + (*iil).second + "\" ";
+					}			
+					string labelVals = "label values " + (*ii)->VariableName() + " " + (*ii)->VariableName() + "_label";
+					// Stata doesn't let us label string, but for debug we can print them in comments (otherwise they stop processing)
+					string toggle = (*ii)->IsNumeric() ? "" : "* "; 
+					printCommand(toggle+labelDef);
+					printCommand(toggle+labelVals);
+				}	
+				printCommand("");
+			}			
 		}
 
 		// tell the user where to look for the .do file
