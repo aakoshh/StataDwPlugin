@@ -94,6 +94,17 @@ int setDefaultOptions( vector<string> args ) {
 		DwUseOptionParser* parser = new DwUseOptionParser();			
 		defaultOptions = parser->Parse( args );
 		delete parser;
+
+		// if the username and password is set, see if they work
+		if( defaultOptions->Username() != "" && defaultOptions->Password() != "" && defaultOptions->Database() != "" ) {
+			DbConnect* conn = new DbConnect( defaultOptions->Username(),
+										     defaultOptions->Password(),
+											 defaultOptions->Database() );
+			delete conn;
+		}
+	}
+	catch( SQLException ex ) {
+		stataDisplay( "Error: " + ex.getMessage() + "\n" );
 	}
 	// show errors
 	catch( exception ex ) {
@@ -125,10 +136,9 @@ int createDataSet( vector<string> args ) {
 		// print raw options
 		SF_display( "Options: \n" );
 		for( map<string,string>::const_iterator ii = options->Options().begin(); ii != options->Options().end(); ++ii ) {
-			if( (*ii).first != "password" ) {
-				string opt = "   " + (*ii).first + string(": ") + (*ii).second + "\n";
-				stataDisplay(opt);
-			}
+			string val = (*ii).first != "password" ? (*ii).second : "******";				
+			string opt = "   " + (*ii).first + string(": ") + val + "\n";
+			stataDisplay(opt);
 		}
 
 		// some error checking
