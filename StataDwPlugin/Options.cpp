@@ -5,6 +5,7 @@
 bool ALWAYS_LOG_COMMANDS = true;
 
 OptionParser::OptionParser(set<string> keys) {
+	// keys are assumed to be lowercase and casing will be ignored
 	this->keys = keys;
 }
 
@@ -15,9 +16,9 @@ map<string,string> OptionParser::Parse(vector<string> words) {
 	string currentKey;
 	for( size_t i=0; i < words.size(); i++ ) {
 		// if the current word is a keyword, use it from now
-		bool isKeyword = this->keys.find(words[i]) != this->keys.end();
+		bool isKeyword = this->keys.find(lowerCase(words[i])) != this->keys.end();
 		if( isKeyword ) {
-			currentKey = words[i];
+			currentKey = lowerCase(words[i]);
 			// take note in the map that the option was there, so it is at least a flag
 			options[currentKey] = ""; // it would have returned this anyway if looked up this way, so later we must check with find
 		} else { // a value must be
@@ -32,6 +33,15 @@ map<string,string> OptionParser::Parse(vector<string> words) {
 }
 
 
+bool hasKeyword(vector<string> words, string word) {
+	for( size_t i=0; i < words.size(); i++ ) {
+		if( lowerCase(words[i]) == lowerCase(word) ) {
+			return true;
+		}
+	}
+	return false;
+}
+
 // parse a STATA command 
 DwUseOptions* DwUseOptionParser::Parse(vector<string> words) {	
 
@@ -44,13 +54,15 @@ DwUseOptions* DwUseOptionParser::Parse(vector<string> words) {
 	// create parser that accepts these keywords
 	OptionParser* parser = new OptionParser( set<string>(keys, keys + nkeys) );
 
+	// prepare another vector where we can search 
+
 	// see if we have a using anywhere, if we do, the first part is the varlist, if not it is the tablename
-	bool hasUsing = std::find(words.begin(), words.end(), "using") != words.end();
+	bool hasUsing = hasKeyword(words, "using");
 
 	// if it contains using somewhere we can start with variables (if missing it will be an empty string, if the list is there it will be expected)
 	if( !hasUsing ) 
 		words.insert(words.begin(), "using"); 
-	else if( words[0] != "if" && words[0] != "using" )
+	else if( lowerCase(words[0]) != "if" && lowerCase(words[0]) != "using" )
 		words.insert(words.begin(), "variables");
 
 	// parse the options
