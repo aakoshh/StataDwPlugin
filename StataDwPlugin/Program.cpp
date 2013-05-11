@@ -10,6 +10,7 @@
 DwUseOptions* defaultOptions = NULL;
 DwUseQuery* query = NULL;
 const string COMMAND_LOG_FILE = "dwcommands.do";
+const bool WRITE_MACRO_VARIABLES = false; // use the log file
 
 // convert string to something STATA can print
 char* toStataString( string msg ) {
@@ -219,14 +220,16 @@ int createDataSet( vector<string> args ) {
 			stataDisplay("Saved commands needed to create the dataset into the file \""+COMMAND_LOG_FILE+"\" in the Stata directory. \n");
 		}
 
-		// Store variable names/types and observation number into Stata macro
-		SF_macro_save("_vars",    toStataString(stata_vars));
-		SF_macro_save("_types",   toStataString(stata_types));
-		SF_macro_save("_formats", toStataString(stata_formats));
-		SF_macro_save("_obs",     toStataString(stata_obs));
+		if( WRITE_MACRO_VARIABLES ) {
+			// Store variable names/types and observation number into Stata macro
+			SF_macro_save("_vars",    toStataString(stata_vars));
+			SF_macro_save("_types",   toStataString(stata_types));
+			SF_macro_save("_formats", toStataString(stata_formats));
+			SF_macro_save("_obs",     toStataString(stata_obs));
 
-		// print out for the users information
-		stataDisplay("Saved data size ("+stata_obs+" rows), column names, types ("+toString(query->Columns().size())+" cols) and suggested formats into marco variables called _obs, _vars, _types and _formats. \n");
+			// print out for the users information
+			stataDisplay("Saved data size ("+stata_obs+" rows), column names, types ("+toString(query->Columns().size())+" cols) and suggested formats into marco variables called _obs, _vars, _types and _formats. \n");
+		}
 	} 
 	// show errors
 	catch( DwUseException ex ) { // for some reason catching the base exception class doesn't work while in STATA :(
@@ -313,10 +316,10 @@ STDLL stata_call(int argc, char *argv[])
 		SF_display("DW Use Plugin usage: \n") ;
 		SF_display("0. You can pass default values for common options, for example:\n");
 		SF_display("	plugin call DW_use, DEFAULTS username <user> password <pass> database <db> \n") ;
-		SF_display("1. Call the plugin in CREATE mode to read table definition and create STATA macros for variables: \n");
+		SF_display("1. Call the plugin in CREATE mode to read table definition and prepare a STATA command file to create the variables: \n");
 		SF_display("	plugin call DW_use, CREATE <table> \n") ;
 		SF_display("	plugin call DW_use, CREATE [<varlist>] [if <expr>] using <table> [nulldata] [lowercase|uppercase] [label_variable [<label_variable_varlist>]] [label_values [<label_values_varlist>]] username <user> password <pass> database <db> [limit <n>] \n") ;
-		SF_display("2. Use the _vars, _types and _obs macro variables to create the STATA dataset, or execute the logged commands with \"do dwcommands.do\". \n");
+		SF_display("2. Execute the logged commands with \"do dwcommands.do\". \n");
 		SF_display("3. Call the plugin in LOAD mode to fill the dataset: \n");
 		SF_display("	plugin call DW_use, LOAD \n") ;
 	} else {
@@ -327,8 +330,8 @@ STDLL stata_call(int argc, char *argv[])
 		for(int i=1; i<argc; i++) {
 			string arg = argv[i];
 			arg = replaceAll(arg, "`", "\"");
-			// if we use a  filter condition with parantheses it will be one word including the "if"
-			if( arg.substr(0,3) == "if " ) {
+			// if we use a filter condition with parantheses it will be one word including the "if"
+			if( lowerCase(arg.substr(0,3)) == "if " ) {
 				args.push_back("if");
 				args.push_back(arg.substr(3));
 			} else {
