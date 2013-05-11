@@ -15,7 +15,7 @@
 // http://www.oracle.com/technetwork/database/occidownloads-083553.html
 
 // according to some Oracle forum Visual Studio 2010 will only work with OCCI v11, which only works with a 11g client
-// so I downloaded a v11 instant client, OCCI and v11 SDK and linked against that
+// so I downloaded a v11 instant client (32-bit version), OCCI and v11 SDK and linked against that
 // added D:\Programs\Oracle10gXE\instantclient_11_2\oci\include\ to Project Properties / C++ / General / Additional Include Directories
 // added D:\Programs\Oracle10gXE\instantclient_11_2\oci\lib\msvc\vc10\oraocci11.lib to Project Properties / Linker / Input / Additional Dependencies
 // at this time I always had crashes at res->next(), so I replaced the above lib with the oraocci11d.lib, the debug version
