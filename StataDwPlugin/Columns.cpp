@@ -126,10 +126,9 @@ string DwColumn::StataFormat() {
 			if( precision <= 2 ) return "%8.0g";
 			if( precision <= 4 ) return "%8.0g";
 			if( precision <= 9 ) return "%12.0g";
-			return "%10.0g";
+			return "%"+toString(precision)+".0g";
 		} else {
-			if( precision <= 7 ) return "%9."+toString(scale)+"f";
-			return "%10."+toString(scale)+"f";
+			return "%"+toString(precision)+"."+toString(scale)+"f";
 		}
 	}
 	if( type == "INTEGER" ) return "%12.0g";
