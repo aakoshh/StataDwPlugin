@@ -125,8 +125,10 @@ int createDataSet( vector<string> args ) {
 		// print raw options
 		SF_display( "Options: \n" );
 		for( map<string,string>::const_iterator ii = options->Options().begin(); ii != options->Options().end(); ++ii ) {
-			string opt = "   " + (*ii).first + string(": ") + (*ii).second + "\n";
-			stataDisplay(opt);
+			if( (*ii).first != "password" ) {
+				string opt = "   " + (*ii).first + string(": ") + (*ii).second + "\n";
+				stataDisplay(opt);
+			}
 		}
 
 		// some error checking
