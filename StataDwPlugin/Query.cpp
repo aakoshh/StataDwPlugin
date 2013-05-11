@@ -131,10 +131,10 @@ class ValueTranslator : public DwTranslator {
 
 
 // check that all labels selected for translation are valid column names
-void CheckLabels( set<string> selection, vector<string> valid ) {
+void CheckLabels( set<string> selection, vector<string> valid, string option ) {
 	for(set<string>::const_iterator ii = selection.begin(); ii != selection.end(); ii++) {
 		if(std::find(valid.begin(), valid.end(), *ii) == valid.end())
-			throw DwUseException( "Invalid column name for translation: " + (*ii) ); 
+			throw DwUseException( "Invalid column name in " + option + ": " + (*ii) ); 
 	}
 }
 
@@ -204,8 +204,8 @@ DwUseQuery::DwUseQuery(DwUseOptions* options) {
 		colNames.push_back( upperCase(colName) ); // to test translations
 	}
 	// check that all the variables selected for labeling are valid column names
-	CheckLabels( transVars, colNames );
-	CheckLabels( transVals, colNames );
+	CheckLabels( transVars, colNames, "label_variable" );
+	CheckLabels( transVals, colNames, "label_values" );
 };
 
 
